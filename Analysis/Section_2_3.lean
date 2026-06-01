@@ -60,17 +60,26 @@ theorem Nat.two_mul (m: Nat) : 2 * m = 0 + m + m := by
 /-- This lemma will be useful to prove Lemma 2.3.2.
 Compare with Mathlib's {name}`Nat.mul_zero` -/
 lemma Nat.mul_zero (n: Nat) : n * 0 = 0 := by
-  sorry
+  revert n; apply induction
+  . rfl
+  intro n ih
+  rw [succ_mul, ih, zero_add]
 
 /-- This lemma will be useful to prove Lemma 2.3.2.
 Compare with Mathlib's {name}`Nat.mul_succ` -/
 lemma Nat.mul_succ (n m:Nat) : n * m++ = n * m + n := by
-  sorry
+  revert n; apply induction
+  · rw [zero_mul, zero_mul, add_zero]
+  · intro n ih
+    rw [succ_mul, ih, succ_mul, add_succ, add_succ, add_assoc, add_comm n m, ← add_assoc]
 
 /-- Lemma 2.3.2 (Multiplication is commutative) / Exercise 2.3.1
 Compare with Mathlib's {name}`Nat.mul_comm` -/
 lemma Nat.mul_comm (n m: Nat) : n * m = m * n := by
-  sorry
+  revert n; apply induction
+  · rw [zero_mul, mul_zero]
+  · intro n ih
+    rw [succ_mul, ih, mul_succ]
 
 /-- Compare with Mathlib's {name}`Nat.mul_one` -/
 theorem Nat.mul_one (m: Nat) : m * 1 = m := by
@@ -79,12 +88,23 @@ theorem Nat.mul_one (m: Nat) : m * 1 = m := by
 /-- This lemma will be useful to prove Lemma 2.3.3.
 Compare with Mathlib's {name}`Nat.mul_pos` -/
 lemma Nat.pos_mul_pos {n m: Nat} (h₁: n.IsPos) (h₂: m.IsPos) : (n * m).IsPos := by
-  sorry
+  rcases (uniq_succ_eq n h₁).exists with ⟨k, hk⟩
+  rw [← hk, succ_mul]
+  exact add_pos_right (k * m) h₂
 
 /-- Lemma 2.3.3 (Positive natural numbers have no zero divisors) / Exercise 2.3.2.
     Compare with Mathlib's {name}`Nat.mul_eq_zero`.  -/
 lemma Nat.mul_eq_zero (n m: Nat) : n * m = 0 ↔ n = 0 ∨ m = 0 := by
-  sorry
+  constructor
+  · intro h
+    by_contra h2
+    simp at h2
+    have : (n * m).IsPos := pos_mul_pos h2.1 h2.2
+    contradiction
+  · intro h
+    rcases h with (hn | hm)
+    · rw [hn, zero_mul]
+    · rw [hm, mul_zero]
 
 /-- Proposition 2.3.4 (Distributive law)
 Compare with Mathlib's {name}`Nat.mul_add` -/
@@ -105,7 +125,10 @@ theorem Nat.add_mul (a b c: Nat) : (a + b)*c = a*c + b*c := by
 /-- Proposition 2.3.5 (Multiplication is associative) / Exercise 2.3.3
 Compare with Mathlib's {name}`Nat.mul_assoc` -/
 theorem Nat.mul_assoc (a b c: Nat) : (a * b) * c = a * (b * c) := by
-  sorry
+  revert a; apply induction
+  · rw [zero_mul, zero_mul, zero_mul]
+  · intro a ih
+    rw [succ_mul, add_mul, succ_mul, ih]
 
 /-- (Not from textbook)  {name}`Nat` is a commutative semiring.
     This allows tactics such as {tactic}`ring` to apply to the Chapter 2 natural numbers. -/
@@ -167,9 +190,21 @@ lemma Nat.mul_cancel_right {a b c: Nat} (h: a * c = b * c) (hc: c.IsPos) : a = b
 /-- (Not from textbook) {name}`Nat` is an ordered semiring.
 This allows tactics such as {tactic}`gcongr` to apply to the Chapter 2 natural numbers. -/
 instance Nat.isOrderedRing : IsOrderedRing Nat where
-  zero_le_one := by sorry
-  mul_le_mul_of_nonneg_left := by sorry
-  mul_le_mul_of_nonneg_right := by sorry
+  zero_le_one := zero_le 1
+  mul_le_mul_of_nonneg_left := by
+    intro a ha c h hch
+    rw [Nat.le_iff] at hch
+    obtain ⟨d, hd⟩ := hch
+    rw [Nat.le_iff]
+    use a * d
+    rw [← mul_add, hd]
+  mul_le_mul_of_nonneg_right := by
+    intro a ha c h hch
+    rw [Nat.le_iff] at hch
+    obtain ⟨d, hd⟩ := hch
+    rw [Nat.le_iff]
+    use d * a
+    rw [hd, add_mul]
 
 /-- This illustration of the {tactic}`gcongr` tactic is not from the
     textbook. -/
@@ -178,11 +213,42 @@ example (a b c d:Nat) (hab: a ≤ b) : c*a*d ≤ c*b*d := by
   . exact d.zero_le
   exact c.zero_le
 
+lemma Nat.pos_gt_zero (a:Nat) (ha: a.IsPos) : a > 0 := by
+  rw [gt_iff_lt, lt_iff]
+  constructor
+  . use a; rfl
+  . rw [isPos_iff] at ha; grind
+
 /-- Proposition 2.3.9 (Euclid's division lemma) / Exercise 2.3.5
 Compare with Mathlib's {name}`Nat.mod_eq_iff` -/
 theorem Nat.exists_div_mod (n:Nat) {q: Nat} (hq: q.IsPos) :
     ∃ m r: Nat, 0 ≤ r ∧ r < q ∧ n = m * q + r := by
-  sorry
+
+  revert n; apply induction
+  . use 0, 0
+    simp
+    grind [pos_gt_zero]
+  intro n h1
+  obtain ⟨m, r, ⟨h3, h4, h5⟩⟩ := h1
+
+  rw [lt_iff_succ_le, succ_eq_add_one, le_iff_lt_or_eq] at h4
+  cases h4 with
+  | inl hlt =>
+    use m, r+1
+    constructor
+    . grind [zero_le]
+    . constructor
+      . exact hlt
+      . rw [←succ_eq_add_one, add_succ, h5]
+  | inr heq =>
+    rw [←heq] at h5
+    use m+1, 0
+    constructor
+    . grind [zero_le]
+    . constructor
+      . rw [←heq, ←succ_eq_add_one, succ_eq_add_one, heq]; grind [pos_gt_zero]
+      . simp
+        rw [succ_eq_add_one, h5, add_assoc, heq, add_mul, one_mul]
 
 /-- Definition 2.3.11 (Exponentiation for natural numbers) -/
 abbrev Nat.pow (m n: Nat) : Nat := Nat.recurse (fun _ prod ↦ prod * m) 1 n
@@ -212,6 +278,8 @@ theorem Nat.pow_one (m: Nat) : m ^ (1:Nat) = m := by
 /-- Exercise 2.3.4-/
 theorem Nat.sq_add_eq (a b: Nat) :
     (a + b) ^ (2 : Nat) = a ^ (2 : Nat) + 2 * a * b + b ^ (2 : Nat) := by
-  sorry
+  rw [two_mul, show 2 = 1++ from rfl]
+  simp [pow_succ]
+  grind
 
 end Chapter2
