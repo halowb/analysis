@@ -512,6 +512,7 @@ theorem Nat.strong_induction {m₀:Nat} {P: Nat → Prop}
   have hm0 := hind m₀
   simp at hm0
 
+  -- a stronger proposition that is easier to prove by induction
   have hlemma: ∀ k n, n ≥ m₀ ∧ n ≤ m₀ + k → P n := by
     apply induction
     . simp; intro k h1 h2;
