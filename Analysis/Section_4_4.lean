@@ -26,10 +26,62 @@ Users of the companion who have completed the exercises in this section are welc
 
 /-- Proposition 4.4.1 (Interspersing of integers by rationals) / Exercise 4.4.1 -/
 theorem Rat.between_int (x:ℚ) : ∃! n:ℤ, n ≤ x ∧ x < n+1 := by
-  sorry
+  apply existsUnique_of_exists_of_unique
+  . -- exist
+    rw [←Rat.num_div_den x]
+
+    have h := Int.mul_ediv_add_emod (x.num) (x.den)
+
+    have : x.den > 0 := by grind [x.den_nz]
+
+    have hmod_lt := Int.emod_lt (x.num) (show (x.den:ℤ) ≠ 0 by grind)
+    simp at hmod_lt
+
+    have hmod_nz:= Int.emod_nonneg x.num (show (x.den:ℤ) ≠ 0 by grind [x.den_nz])
+
+    set d := x.den
+    set q := (x.num / ↑x.den)
+    set r := x.num % x.den
+    use q
+    constructor
+    . rw [←h]; field_simp; norm_cast; rw [mul_comm]; simp;
+      linarith
+    . rw [←h]; field_simp; norm_cast; rw [mul_add]; simp;
+      linarith
+  . -- unique
+    intro a b ⟨ha1, ha2⟩ ⟨hb1, hb2⟩
+    rcases lt_trichotomy a b with hlt | heq | hgt
+    . have h1: a + 1 ≤ b := by linarith
+      have h2: (b:ℚ) < (a:ℚ) + 1 := by linarith
+      norm_cast at h2
+      linarith
+    . exact heq
+    . have h1: b + 1 ≤ a := by linarith
+      have h2: (a:ℚ) < (b:ℚ) + 1 := by linarith
+      norm_cast at h2
+      linarith
 
 theorem Nat.exists_gt (x:ℚ) : ∃ n:ℕ, n > x := by
-  sorry
+  rcases lt_trichotomy x 0 with hlt | hz | hgt
+  . use 1; linarith
+  . use 1; rw [hz]; norm_num;
+  . rw [←Rat.num_div_den x] at hgt
+    have : x.den > 0 := by grind [x.den_nz]
+    qify at this
+    have h1:= mul_lt_mul_of_pos_left hgt this
+    field_simp at h1
+    have h2: (x.num:ℚ) > 0 := by grind
+    norm_cast at h2
+    let n: ℕ := x.num.toNat
+    have: n = x.num := by grind
+    use n + 1
+    rw [←Rat.num_div_den x, ←this]
+    field_simp
+    norm_cast
+    have : x.den > 0 := by grind [x.den_nz]
+    have : 1 ≤ x.den := by grind
+    have := mul_le_mul_right (n + 1) this
+    linarith
 
 /-- Proposition 4.4.3 (Interspersing of rationals) -/
 theorem Rat.exists_between_rat {x y:ℚ} (h: x < y) : ∃ z:ℚ, x < z ∧ z < y := by
@@ -46,12 +98,28 @@ theorem Rat.exists_between_rat {x y:ℚ} (h: x < y) : ∃ z:ℚ, x < z ∧ z < y
 
 /-- Exercise 4.4.2 (a) -/
 theorem Nat.no_infinite_descent : ¬ ∃ a:ℕ → ℕ, ∀ n, a (n+1) < a n := by
-  sorry
+  by_contra h
+  obtain ⟨f, hf⟩ := h
+  let x := f 0
+
+  have h1 (n:ℕ): f (n) < x + 1 - n := by
+    induction' n with n ih
+    . simp; grind
+    . have h2 := hf n
+      have h3 : f n ≤ x + 1 - (n + 1) := by grind
+      linarith
+
+  have h3:= h1 (x + 1)
+  simp at h3
 
 /-- Exercise 4.4.2 (b) -/
 def Int.infinite_descent : Decidable (∃ a:ℕ → ℤ, ∀ n, a (n+1) < a n) := by
   -- the first line of this construction should be either `apply isTrue` or `apply isFalse`.
-  sorry
+  apply isTrue
+  let f : ℕ → ℤ := fun n => -n
+  use f
+  intro n
+  simp [f]
 
 /-- Exercise 4.4.2 (b) -/
 def Rat.pos_infinite_descent : Decidable (∃ a:ℕ → {x: ℚ // 0 < x}, ∀ n, a (n+1) < a n) := by
@@ -62,10 +130,22 @@ def Rat.pos_infinite_descent : Decidable (∃ a:ℕ → {x: ℚ // 0 < x}, ∀ n
 #check odd_iff_exists_bit1
 
 theorem Nat.even_or_odd'' (n:ℕ) : Even n ∨ Odd n := by
-  sorry
+  rw [Even, Odd]
+  induction' n with n ih
+  . left; use 0;
+  . rcases ih with (h1 | h2)
+    . obtain ⟨r, hr⟩ := h1
+      right; use r; rw [hr]; grind
+    . obtain ⟨k, hk⟩ := h2
+      left; use k + 1; rw [hk]; grind
 
 theorem Nat.not_even_and_odd (n:ℕ) : ¬ (Even n ∧ Odd n) := by
-  sorry
+  by_contra h
+  rw [Even, Odd] at h
+  obtain ⟨r, hr⟩ := h.1
+  obtain ⟨k, hk⟩ := h.2
+  rw [hr] at hk
+  grind
 
 #check Nat.rec
 
