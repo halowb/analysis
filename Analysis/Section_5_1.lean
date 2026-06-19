@@ -518,7 +518,7 @@ example : ¬((fun n:ℕ ↦ (-1)^n * (n+1:ℚ)):Sequence).IsBounded := by
   simp [Sequence.BoundedBy]
   intro M h
 
-  let x := ↑⌊M⌋ + 1
+  let x := ⌊M⌋ + 1
 
   have h1: x > M := by grind [Int.lt_floor_add_one]
   have : (x:ℚ) ≥ 0 := by linarith
