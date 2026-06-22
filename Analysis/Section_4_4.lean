@@ -124,7 +124,13 @@ def Int.infinite_descent : Decidable (∃ a:ℕ → ℤ, ∀ n, a (n+1) < a n) :
 /-- Exercise 4.4.2 (b) -/
 def Rat.pos_infinite_descent : Decidable (∃ a:ℕ → {x: ℚ // 0 < x}, ∀ n, a (n+1) < a n) := by
   -- the first line of this construction should be either `apply isTrue` or `apply isFalse`.
-  sorry
+  apply isTrue
+  let f : ℕ → {x: ℚ // 0 < x} := fun n => ⟨1/(n+1), by positivity⟩
+  use f
+  intro n
+  simp [f]
+  field_simp
+  grind
 
 #check even_iff_exists_two_mul
 #check odd_iff_exists_bit1
@@ -173,10 +179,18 @@ theorem Rat.not_exist_sqrt_two : ¬ ∃ x:ℚ, x^2 = 2 := by
       choose q hpos hq using hPp.2
       have : q^2 = 2 * k^2 := by linarith
       use q; constructor
-      . sorry
+      . have: k > 0 := by grind
+        have: k^2 > 0 := by positivity
+        have: 2 * k ^ 2 < 4 * k ^ 2 := by grind
+        have: q^2 < (2*k)^2 := by grind
+        grind [sq_lt_sq₀ (show q ≥ 0 by grind)]
       exact ⟨ hpos, k, by linarith [hPp.1], this ⟩
     have h1 : Odd (p^2) := by
-      sorry
+      choose q hq using hp
+      have: p^2 = 4 * q^2 + 4 * q + 1 := by grind
+      rw [odd_iff_exists_bit1]
+      use 2*q^2 + 2*q
+      grind
     have h2 : Even (p^2) := by
       choose q hpos hq using hPp.2
       rw [even_iff_exists_two_mul]

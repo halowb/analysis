@@ -93,16 +93,9 @@ theorem Real.trichotomous (x:Real) : x = 0 ∨ x.IsPos ∨ x.IsNeg := by
     simp only [Section_4_3.dist] at ha2
 
     let a' : ℕ → ℚ := fun n ↦ a (n + N)
-    have heq: Sequence.Equiv a a' := by
-      rw [Sequence.equiv_iff]
-      intro ε hε
-      choose N1 hmn using ha1 ε hε
-      simp only [Section_4_3.dist] at hmn
-      use N1; intro n hn;
-      rw [show a' n = a (n + N) by rfl]
-      exact hmn n (by grind) (n + N) (by grind)
+    have heq := Sequence.equiv_sub_seq a ha a' (by rfl)
 
-    have h_cauchy: (a':Sequence).IsCauchy := by exact (Sequence.isCauchy_of_equiv heq).mp ha
+    have h_cauchy: (a':Sequence).IsCauchy := (Sequence.isCauchy_of_equiv heq).mp ha
     have h_eq_x: x = LIM a' := by grind [(Real.LIM_eq_LIM ha h_cauchy).mpr heq]
 
     have hnc1: ∀ (n : ℕ), |a' n| ≥ c := by grind

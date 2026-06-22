@@ -168,6 +168,20 @@ lemma Sequence.equiv_iff (a b: ℕ → ℚ) : Equiv a b ↔ ∀ ε > 0, ∃ N, �
     specialize h ε hε
     exact h
 
+lemma Sequence.equiv_sub_seq {N:ℕ} (a: ℕ → ℚ) (ha: (a:Sequence).IsCauchy)
+  (a': ℕ → ℚ) (h: a' = fun n ↦ a (n + N))
+  : Equiv a a' := by
+
+  rw [Sequence.equiv_iff]
+  intro ε hε
+  rw [Sequence.IsCauchy.coe] at ha
+  specialize ha ε hε
+  simp [Section_4_3.dist_eq] at ha
+  obtain ⟨M, hM⟩ := ha
+  use M; intro n hn
+  specialize hM n (by grind) (n + N) (by grind)
+  grind
+
 lemma Sequence.equiv_symm (a b: ℕ → ℚ) : Equiv a b ↔ Equiv b a := by
 
   rw [equiv_iff, equiv_iff]
